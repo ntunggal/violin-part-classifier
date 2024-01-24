@@ -2,6 +2,27 @@ import os
 import shutil
 from sklearn.model_selection import train_test_split
 
+# Given a main folder, extract all .jpg to a destination folder
+def extract_images(source, dest):
+    
+    # Create the destination folder if it doesn't exist
+    if not os.path.exists(dest):
+        os.makedirs(dest)
+
+    # Traverse through the source folder and its subfolders
+    for foldername, subfolders, filenames in os.walk(source):
+        for filename in filenames:
+            if filename.lower().endswith('.jpg'):
+                # Full path of the source image file
+                source_image_path = os.path.join(foldername, filename)
+
+                # Full path for the destination image file
+                destination_image_path = os.path.join(dest, filename)
+
+                # Copy the image to the destination folder
+                shutil.move(source_image_path, destination_image_path)
+
+
 def split_images(input_folder, train_folder, test_folder):
     
     # Create output folders if they don't exist
@@ -82,9 +103,14 @@ def organize_images(input_folder, output_folder):
         # Move the image to the appropriate subfolder
         shutil.move(image_path, os.path.join(class_folder, image_file))
 
+source_folder = r'examples_root'
+dest_folder = r'Image_examples'
+
 input_data_folder = r'Image_examples'
 train_folder_path = r'violin_data\train'
 test_folder_path = r'violin_data\test'
+
+extract_images(source_folder, dest_folder)
 
 split_images(input_data_folder, train_folder_path, test_folder_path)
 
