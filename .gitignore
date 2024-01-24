@@ -1,2 +1,4 @@
 # ignore the automatically generated data folder from CIFAR10
 data
+Image_examples
+violin_data
