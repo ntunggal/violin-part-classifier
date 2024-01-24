@@ -3,6 +3,7 @@ import shutil
 from sklearn.model_selection import train_test_split
 
 # Given a main folder, extract all .jpg to a destination folder
+# Works on the format we were given
 def extract_images(source, dest):
     
     # Create the destination folder if it doesn't exist
