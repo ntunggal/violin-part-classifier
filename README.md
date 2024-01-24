@@ -1,5 +1,8 @@
 # violin-part-classifier
 
+environment.yml has not been updated
+added scikit-image
+
 ## Resources
 Patrick Loeber PyTorch Tutorial 14 - CNN
 https://www.youtube.com/watch?v=pDdP0TFzsoQ&list=PLqnslRFeH2UrcDBWF5mfPGpqQDSta6VK4&index=14

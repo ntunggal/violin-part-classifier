@@ -1,6 +1,17 @@
-# Taken from Patrick Loeber Pytorch tutorial 14
-# Currently a copy of cnn_cifar
+'''
+Updates:
+Trying to write the ViolinData class.
+Having trouble writing the __getitem__() method.
+- only works if number of files in each folder are the same
+- currently works by division
 
+To run this file:
+1. have a folder called examples_root in the directory
+2. run data_preprocessing
+3. run this
+'''
+
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,6 +19,8 @@ import torchvision
 import torchvision.transforms as transforms
 import matplotlib.pyplot as pyplot
 import numpy as np
+from torch.utils.data import Dataset, DataLoader
+from skimage import io
 
 # Device config
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -18,26 +31,56 @@ batch_size = 4
 learning_rate = 0.001
 
 
+classes = sorted(['violin_back', 'back_zoom', 'violin_left', 'front_zoom',
+           'scroll_front', 'scroll_left', 'label', 'scroll_back',
+           'violin_front', 'scroll_right', 'violin_right'])
+
+
 transform = transforms.Compose(
-    [transforms.ToTensor(),
+    [transforms.Resize((32, 32)),
+     transforms.ToTensor(),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-
-train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                             download=True, transform=transform)
-
-test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                             download=True, transform=transform)
-
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
-                                           shuffle=True)
-
-test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
-                                           shuffle=False)
+# Class to index and index to class since model can't use class names
+idx_to_class = {i:j for i, j in enumerate(classes)}
+class_to_idx = {value:key for key,value in idx_to_class.items()}
 
 
-classes = ('plane', 'car', 'deer', 'dog', 'bird', 'cat', 'frog', 'horse',
-           'ship', 'truck')
+class ViolinData(Dataset):
+    def __init__(self, root_dir, transform):
+        self.root_dir = root_dir
+        self.transform = transform
+        self.classes = sorted(os.listdir(self.root_dir))
+
+    def __len__(self):
+        return sum(len(f) for _,_,f in os.walk(self.root_dir))
+    
+    def __getitem__(self, index):
+        # Get path of folder that image is in
+        label = self.classes[index // len(self.classes)]
+        img_folder = os.path.join(self.root_dir, label)
+
+        # Get the path of the image itself
+        print(os.listdir(img_folder))
+        print(index % len(self.classes))
+        img_file = os.listdir(img_folder)[index % len(self.classes)]
+        img_path = os.path.join(img_folder, img_file)
+        image = io.imread(img_path)
+
+        # Apply transforms, if any
+        if self.transform is not None:
+            image = self.transform(image=image)
+        
+        return image, label
+
+
+train_dataset = ViolinData(r'violin_data/train', transform=transform)
+
+test_dataset = ViolinData(r'violin_data/test', transform=transform)
+
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 
 class ConvNet(nn.Module):
