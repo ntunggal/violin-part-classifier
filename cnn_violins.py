@@ -37,8 +37,8 @@ classes = sorted(['violin_back', 'back_zoom', 'violin_left', 'front_zoom',
 
 
 transform = transforms.Compose(
-    [transforms.Resize((32, 32)),
-     transforms.ToTensor(),
+    [transforms.ToTensor(),
+     transforms.Resize((32, 32)),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 # Class to index and index to class since model can't use class names
@@ -52,24 +52,30 @@ class ViolinData(Dataset):
         self.transform = transform
         self.classes = sorted(os.listdir(self.root_dir))
 
+        # A dict mapping classes to list of file paths
+        self.class_file_paths = {c: [] for c in self.classes}
+        for c in self.classes:
+            class_folder = os.path.join(root_dir, c)
+            self.class_file_paths[c] = [os.path.join(class_folder, file) for file in os.listdir(class_folder)]
+
     def __len__(self):
         return sum(len(f) for _,_,f in os.walk(self.root_dir))
     
     def __getitem__(self, index):
-        # Get path of folder that image is in
-        label = self.classes[index // len(self.classes)]
-        img_folder = os.path.join(self.root_dir, label)
+        # Navigate to the correct class folder
+        class_idx = 0
+        while index >= len(self.class_file_paths[self.classes[class_idx]]):
+            index -= len(self.class_file_paths[self.classes[class_idx]])
+            class_idx += 1
 
-        # Get the path of the image itself
-        print(os.listdir(img_folder))
-        print(index % len(self.classes))
-        img_file = os.listdir(img_folder)[index % len(self.classes)]
-        img_path = os.path.join(img_folder, img_file)
-        image = io.imread(img_path)
+        # Navigate to the correct image
+        label = self.classes[class_idx]
+        image_path = self.class_file_paths[label][index]
+        image = io.imread(image_path)
 
         # Apply transforms, if any
         if self.transform is not None:
-            image = self.transform(image=image)
+            image = self.transform(image)
         
         return image, label
 
