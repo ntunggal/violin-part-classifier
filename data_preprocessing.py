@@ -49,8 +49,6 @@ def organize_images(input_folder, output_folder):
     
     # Create the output folder if it doesn't exist
     os.makedirs(output_folder, exist_ok=True)
-
-    class_info = ['back', 'bb', 'bside', 'fb', 'front', 'head', 'label', 'rear', 'top', 'treb', 'tside']
     
     # Key to map image name to its class:
     '''
@@ -104,6 +102,12 @@ def organize_images(input_folder, output_folder):
         # Move the image to the appropriate subfolder
         shutil.move(image_path, os.path.join(class_folder, image_file))
 
+def remove_excess():
+    os.rmdir(r'Image_examples')
+    shutil.rmtree(r'violin_data\test\other')
+    shutil.rmtree(r'violin_data\train\other')
+
+
 source_folder = r'examples_root'
 dest_folder = r'Image_examples'
 
@@ -117,3 +121,5 @@ split_images(input_data_folder, train_folder_path, test_folder_path)
 
 organize_images(r'violin_data\train', r'violin_data\train')
 organize_images(r'violin_data\test', r'violin_data\test')
+
+remove_excess()

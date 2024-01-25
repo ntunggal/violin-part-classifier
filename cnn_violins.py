@@ -1,16 +1,3 @@
-'''
-Updates:
-Trying to write the ViolinData class.
-Having trouble writing the __getitem__() method.
-- only works if number of files in each folder are the same
-- currently works by division
-
-To run this file:
-1. have a folder called examples_root in the directory
-2. run data_preprocessing
-3. run this
-'''
-
 import os
 import torch
 import torch.nn as nn
@@ -27,7 +14,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Hyper parameters
 num_epochs = 4
-batch_size = 4
+batch_size = 64
 learning_rate = 0.001
 
 
@@ -40,10 +27,6 @@ transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Resize((32, 32)),
      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-# Class to index and index to class since model can't use class names
-idx_to_class = {i:j for i, j in enumerate(classes)}
-class_to_idx = {value:key for key,value in idx_to_class.items()}
 
 
 class ViolinData(Dataset):
@@ -76,6 +59,7 @@ class ViolinData(Dataset):
         # Apply transforms, if any
         if self.transform is not None:
             image = self.transform(image)
+        label = torch.tensor(class_idx, dtype=torch.long)
         
         return image, label
 
@@ -88,7 +72,7 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-
+'''
 class ConvNet(nn.Module):
     def __init__(self):
         super(ConvNet, self).__init__()
@@ -99,7 +83,7 @@ class ConvNet(nn.Module):
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.fc1 = nn.Linear(16*5*5, 120) # output channels*shape
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10) # output size is 10 bc 10 classes
+        self.fc3 = nn.Linear(84, 11) # output size
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x))) # does conv1, applies relu, pools
@@ -109,7 +93,37 @@ class ConvNet(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
+'''
 
+# Chat GPT generated
+class ConvNet(nn.Module):
+    def __init__(self):
+        super(ConvNet, self).__init__()
+
+        # Convolutional layers
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1)
+        self.relu1 = nn.ReLU()
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
+
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1)
+        self.relu2 = nn.ReLU()
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+
+        # Fully connected layers
+        self.fc1 = nn.Linear(32 * 6 * 6, 128)  # Adjusted size based on the actual output size
+        self.relu3 = nn.ReLU()
+
+        self.fc2 = nn.Linear(128, 11)  # 11 output classes
+
+    def forward(self, x):
+        x = self.pool1(self.relu1(self.conv1(x)))
+        x = self.pool2(self.relu2(self.conv2(x)))
+
+        x = x.view(-1, 32 * 6 * 6)  # Reshape before fully connected layer
+        x = self.relu3(self.fc1(x))
+        x = self.fc2(x)
+
+        return x
 
 model = ConvNet().to(device)
 
@@ -122,9 +136,11 @@ for epoch in range(num_epochs):
     for i, (images, labels) in enumerate(train_loader):
         images = images.to(device)
         labels = labels.to(device)
+        #print(labels)
 
         # Forward pass
         outputs = model(images)
+        #print(outputs)
         loss = criterion(outputs, labels)
 
         # Backward and optimize
@@ -132,7 +148,7 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
 
-        if (i+1) % 2000 == 0:
+        if (i+1) % 20 == 0:
             print(f'Epoch [{epoch+1}/{num_epochs}], step [{i+1}/{n_total_steps}], loss: {loss.item():.4f}')
 
 print('Finished training')
@@ -141,8 +157,9 @@ print('Finished training')
 with torch.no_grad():
     n_correct = 0
     n_samples = 0
-    n_class_correct = [0 for i in range(10)]
-    n_class_samples = [0 for i in range(10)]
+    n_class_correct = [0 for i in range(11)]
+    n_class_samples = [0 for i in range(11)]
+    
     for images, labels in test_loader:
         images = images.to(device)
         labels = labels.to(device)
@@ -153,12 +170,16 @@ with torch.no_grad():
         n_samples += labels.size(0)
         n_correct += (predicted == labels).sum().item()
 
-        for i in range(batch_size):
+        for i in range(labels.size(0)):
             label = labels[i]
+            print(f'label: {label}')
             pred = predicted[i]
+            print(f'pred: {pred}')
             if (label == pred):
                 n_class_correct[label] += 1
             n_class_samples[label] += 1
+
+        print('one img,label-----------------')
 
     acc = 100.0 * (n_correct / n_samples)
     print(f'Accuracy of the network: {acc}%')
