@@ -14,8 +14,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Hyper parameters
 num_epochs = 4
-batch_size = 64
-learning_rate = 0.001
+batch_size = 16
+learning_rate = 0.01
 
 
 classes = sorted(['violin_back', 'back_zoom', 'violin_left', 'front_zoom',
@@ -172,14 +172,14 @@ with torch.no_grad():
 
         for i in range(labels.size(0)):
             label = labels[i]
-            print(f'label: {label}')
+            #print(f'label: {label}')
             pred = predicted[i]
-            print(f'pred: {pred}')
+            #print(f'pred: {pred}')
             if (label == pred):
                 n_class_correct[label] += 1
             n_class_samples[label] += 1
 
-        print('one img,label-----------------')
+        #print('one img,label-----------------')
 
     acc = 100.0 * (n_correct / n_samples)
     print(f'Accuracy of the network: {acc}%')
