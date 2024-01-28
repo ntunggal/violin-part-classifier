@@ -1,3 +1,8 @@
+'''
+Requires a folder in root directory called examples_root
+Format should be many subfolders containing .jpg inside
+'''
+
 import os
 import shutil
 from sklearn.model_selection import train_test_split
